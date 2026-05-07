@@ -3,186 +3,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>晨光萃取 Dawn Brew - 虛擬助教版</title>
+    <title>Dawn Brew - 晨光萃取</title>
     <style>
+        :root {
+            --primary-color: #6d4c41;
+            --accent-color: #d4a373;
+            --bg-color: #fefae0;
+            --sunlight: rgba(255, 255, 224, 0.4);
+        }
+
         body {
             margin: 0;
-            background: linear-gradient(135deg, #f5e6ca 0%, #d4a373 100%);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden;
+            background: var(--bg-color);
+            background-image: linear-gradient(120deg, var(--sunlight) 0%, transparent 40%),
+                              radial-gradient(circle at top right, var(--sunlight) 0%, transparent 30%);
+            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             height: 100vh;
-            color: #432818;
+            overflow: hidden;
+            color: var(--primary-color);
         }
 
-        #game-info {
-            margin-top: 20px;
+        /* 頂部資訊區 */
+        header {
+            margin-top: 30px;
             text-align: center;
-            z-index: 10;
+            padding: 0 20px;
         }
 
-        /* 虛擬水平儀 */
-        #level-container {
-            width: 200px;
-            height: 200px;
-            border: 4px solid #432818;
+        h1 { font-size: 1.5rem; letter-spacing: 2px; margin-bottom: 5px; }
+        .bean-info { font-size: 0.9rem; color: #8d6e63; }
+
+        /* 核心遊戲區域 */
+        #stage {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* 虛擬濾杯視覺 */
+        .dripper-view {
+            width: 180px;
+            height: 180px;
+            border: 8px solid rgba(255,255,255,0.8);
             border-radius: 50%;
             position: relative;
-            margin: 40px auto;
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(255,255,255,0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        #target-ring {
-            width: 40px;
-            height: 40px;
-            border: 2px dashed #008000;
+        /* 水流指示器 (取代紅點) */
+        #water-drop {
+            width: 12px;
+            height: 12px;
+            background: #a8dadc;
             border-radius: 50%;
             position: absolute;
+            box-shadow: 0 0 15px #457b9d;
+            opacity: 0;
+            transition: opacity 0.3s;
         }
 
-        #bubble {
-            width: 20px;
-            height: 20px;
-            background-color: #e63946;
-            border-radius: 50%;
+        /* 穩定度計量器 - 環形設計 */
+        .progress-container {
             position: absolute;
-            transition: transform 0.1s ease-out;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
-
-        /* 穩定度計量條 */
-        #stability-bar-container {
+            bottom: 50px;
             width: 80%;
-            height: 30px;
-            background: #eee;
-            border-radius: 15px;
-            border: 2px solid #432818;
-            overflow: hidden;
-            margin-top: 20px;
+            text-align: center;
         }
 
-        #stability-fill {
+        .bar-bg {
+            width: 100%;
+            height: 6px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 3px;
+            margin-top: 10px;
+        }
+
+        #bar-fill {
             width: 0%;
             height: 100%;
-            background: linear-gradient(90deg, #ffb703, #fb8500);
-            transition: width 0.3s;
+            background: var(--accent-color);
+            border-radius: 3px;
+            transition: width 0.1s;
         }
 
-        .perfect-glow {
-            box-shadow: 0 0 20px #fb8500;
-        }
-
-        #status {
-            font-weight: bold;
-            margin-top: 10px;
-            font-size: 1.2rem;
+        /* 啟動按鈕 */
+        #overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.9);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
         }
 
         button {
-            padding: 15px 30px;
-            font-size: 1rem;
-            background-color: #432818;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            background: var(--primary-color);
             color: white;
             border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            margin-top: 20px;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
+
+        #feedback { font-size: 1.2rem; margin-top: 20px; min-height: 1.5em; }
     </style>
 </head>
 <body>
 
-<div id="game-info">
-    <h2>晨光萃取：V60 穩定度練習</h2>
-    <p>豆子：巴西 喜拉朵 (入門級)</p>
-    <div id="status">等待啟動...</div>
+<div id="overlay">
+    <h2>晨光中的第一杯</h2>
+    <p>準備好練習穩定注水了嗎？<br>將手機水平握持，像握著壺把一樣。</p>
+    <button id="start-btn">開始沖煮</button>
 </div>
 
-<div id="level-container">
-    <div id="target-ring"></div>
-    <div id="bubble"></div>
-</div>
+<header>
+    <h1>DAWN BREW</h1>
+    <div class="bean-info">正在沖煮：巴西 喜拉朵 (中烘焙)</div>
+</header>
 
-<div id="stability-bar-container">
-    <div id="stability-fill"></div>
+<div id="stage">
+    <div class="dripper-view">
+        <div id="water-drop"></div>
+        <div style="color:rgba(255,255,255,0.5); font-size: 0.8rem;">V60 DRIER</div>
+    </div>
+    <div id="feedback">請微傾手機開始注水</div>
+    
+    <div class="progress-container">
+        <div id="brew-status">穩定度：0%</div>
+        <div class="bar-bg">
+            <div id="bar-fill"></div>
+        </div>
+    </div>
 </div>
-
-<button id="start-btn">點擊啟動陀螺儀感測</button>
 
 <script>
-    const bubble = document.getElementById('bubble');
-    const status = document.getElementById('status');
-    const fill = document.getElementById('stability-fill');
-    const startBtn = document.getElementById('start-btn');
+    const waterDrop = document.getElementById('water-drop');
+    const barFill = document.getElementById('bar-fill');
+    const feedback = document.getElementById('feedback');
+    const brewStatus = document.getElementById('brew-status');
+    const overlay = document.getElementById('overlay');
     
     let stability = 0;
-    let isGaming = false;
+    let isBrewing = false;
 
-    // 啟動感測器（iOS 需要授權）
-    startBtn.addEventListener('click', () => {
+    document.getElementById('start-btn').addEventListener('click', () => {
         if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-            DeviceOrientationEvent.requestPermission()
-                .then(permissionState => {
-                    if (permissionState === 'granted') {
-                        initGame();
-                    }
-                })
-                .catch(console.error);
+            DeviceOrientationEvent.requestPermission().then(state => {
+                if (state === 'granted') startApp();
+            });
         } else {
-            initGame();
+            startApp();
         }
     });
 
-    function initGame() {
-        isGaming = true;
-        startBtn.style.display = 'none';
-        status.innerText = "正在悶蒸中...保持穩定！";
-        window.addEventListener('deviceorientation', handleOrientation);
+    function startApp() {
+        overlay.style.display = 'none';
+        isBrewing = true;
+        window.addEventListener('deviceorientation', handleMotion);
     }
 
-    function handleOrientation(event) {
-        if (!isGaming) return;
+    function handleMotion(e) {
+        if (!isBrewing) return;
 
-        // 獲取手機傾斜數值
-        let x = event.beta;  // 前後傾斜 (-180 到 180)
-        let y = event.gamma; // 左右傾斜 (-90 到 90)
+        // Beta 是前後傾斜 (倒水動作)
+        // Gamma 是左右傾斜 (繞圈動作)
+        let tiltForward = e.beta; 
+        let tiltSide = e.gamma;
 
-        // 限制在水平儀範圍內 (簡化運算)
-        let moveX = Math.max(-90, Math.min(90, y)) * 1; 
-        let moveY = Math.max(-90, Math.min(90, x - 45)) * 1; // 假設 45 度是舒適握姿
+        // 模擬注水啟動：當手機往前傾斜超過 15 度時開始注水
+        if (tiltForward > 15) {
+            waterDrop.style.opacity = 1;
+            
+            // 計算偏移，模擬水流擊中點
+            let x = tiltSide * 2;
+            let y = (tiltForward - 30) * 2; // 假設 30 度是最佳注水角
+            
+            waterDrop.style.transform = `translate(${x}px, ${y}px)`;
 
-        bubble.style.transform = `translate(${moveX}px, ${moveY}px)`;
-
-        // 判定穩定度：如果紅點距離中心很近
-        let distance = Math.sqrt(moveX * moveX + moveY * moveY);
-        
-        if (distance < 20) { // 進入黃金環
-            stability += 0.5;
-            status.innerText = "完美萃取中！✨";
-            status.style.color = "#008000";
-            fill.classList.add('perfect-glow');
+            // 穩定度判定
+            let dist = Math.sqrt(x*x + y*y);
+            if (dist < 25) {
+                stability += 0.4;
+                feedback.innerText = "✨ 水流非常穩定";
+                feedback.style.color = "#2a9d8f";
+            } else {
+                stability -= 0.2;
+                feedback.innerText = "⚠️ 水流偏移了";
+                feedback.style.color = "#e76f51";
+            }
         } else {
-            stability -= 0.2;
-            status.innerText = "手抖了！調整角度...";
-            status.style.color = "#e63946";
-            fill.classList.remove('perfect-glow');
+            waterDrop.style.opacity = 0;
+            feedback.innerText = "請向前微傾模擬注水";
+            feedback.style.color = "#6d4c41";
         }
 
         stability = Math.max(0, Math.min(100, stability));
-        fill.style.width = stability + "%";
+        barFill.style.width = stability + "%";
+        brewStatus.innerText = `穩定度：${Math.floor(stability)}%`;
 
         if (stability >= 100) {
-            isGaming = false;
-            status.innerText = "成功完成 30 秒悶蒸！解鎖耶加雪菲。";
-            alert("恭喜！你帶出了巴西豆的堅果甜感！");
+            isBrewing = false;
+            feedback.innerText = "🎉 沖煮完成！甘甜感十足。";
+            setTimeout(() => alert("這杯巴西豆展現了完美的核果風味！"), 500);
         }
     }
 </script>
-
 </body>
 </html>
