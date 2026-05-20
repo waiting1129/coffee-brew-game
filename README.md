@@ -1,2 +1,2 @@
-# coffee-brew-game
-模擬咖啡練習
+# sudoku-cat-game
+貓貓數讀
