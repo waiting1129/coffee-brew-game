@@ -165,13 +165,29 @@ h1{font-size:2.8rem;font-weight:900;color:var(--orange);letter-spacing:-1px;text
   background:linear-gradient(135deg,#fff9c4,#fff0d0);
   border-top:3px solid var(--yellow);
   border-radius:24px 24px 0 0;
-  padding:16px 18px 20px;
+  padding:0 18px 20px;
   box-shadow:0 -6px 30px rgba(58,46,38,.15);
   z-index:60;transition:transform .35s cubic-bezier(.4,0,.2,1);
   max-width:600px;left:50%;transform:translateX(-50%);
   pointer-events:all;width:100%;
 }
 .coach-bubble.hidden{transform:translateX(-50%) translateY(110%);}
+/* 把手列 */
+.coach-handle{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 2px 8px;cursor:pointer;user-select:none;
+}
+.coach-handle-bar{width:40px;height:4px;border-radius:99px;background:rgba(160,96,0,.22);margin:0 auto;}
+.coach-handle-left{font-size:.82rem;font-weight:900;color:#a06000;opacity:.85;}
+.coach-toggle-icon{font-size:.78rem;color:#a06000;transition:transform .3s;opacity:.7;}
+.coach-bubble.collapsed .coach-toggle-icon{transform:rotate(180deg);}
+/* 可收合的內容區 */
+.coach-content{
+  overflow:hidden;
+  max-height:420px;opacity:1;
+  transition:max-height .38s cubic-bezier(.4,0,.2,1),opacity .3s;
+}
+.coach-bubble.collapsed .coach-content{max-height:0;opacity:0;}
 .coach-step-bar{display:flex;gap:5px;margin-bottom:10px;}
 .cs-dot{width:28px;height:6px;border-radius:99px;background:var(--border);transition:all .3s;}
 .cs-dot.done{background:var(--teal);}
@@ -553,15 +569,24 @@ h1{font-size:2.8rem;font-weight:900;color:var(--orange);letter-spacing:-1px;text
 
 <!-- COACH BUBBLE -->
 <div class="coach-bubble hidden" id="coachBubble">
-  <div class="coach-step-bar" id="coachStepBar"></div>
-  <div class="coach-inner">
-    <div class="coach-cat" id="coachCat">😺</div>
-    <div class="coach-text">
-      <div class="coach-title" id="coachTitle">喵老師說：</div>
-      <div class="coach-msg" id="coachMsg"></div>
-    </div>
+  <!-- 把手列：點擊或滑動收合/展開 -->
+  <div class="coach-handle" id="coachHandle">
+    <span class="coach-handle-left" id="coachHandleLabel">喵老師說</span>
+    <div class="coach-handle-bar"></div>
+    <span class="coach-toggle-icon" id="coachToggleIcon">▼</span>
   </div>
-  <div class="coach-btn-row" id="coachBtnRow"></div>
+  <!-- 可收合內容 -->
+  <div class="coach-content" id="coachContent">
+    <div class="coach-step-bar" id="coachStepBar"></div>
+    <div class="coach-inner">
+      <div class="coach-cat" id="coachCat">😺</div>
+      <div class="coach-text">
+        <div class="coach-title" id="coachTitle">喵老師說：</div>
+        <div class="coach-msg" id="coachMsg"></div>
+      </div>
+    </div>
+    <div class="coach-btn-row" id="coachBtnRow"></div>
+  </div>
 </div>
 
 <script>
@@ -890,8 +915,36 @@ function showTutWin(){
   spawnConfetti();
 }
 
-function showCoach(){document.getElementById('coachBubble').classList.remove('hidden');}
+let coachCollapsed=false;
+let coachTouchStartY=0;
+
+function showCoach(){
+  const b=document.getElementById('coachBubble');
+  b.classList.remove('hidden');
+  // 每次顯示新提示時自動展開
+  coachCollapsed=false;
+  b.classList.remove('collapsed');
+}
 function hideCoach(){document.getElementById('coachBubble').classList.add('hidden');}
+
+function toggleCoachCollapse(){
+  const b=document.getElementById('coachBubble');
+  coachCollapsed=!coachCollapsed;
+  b.classList.toggle('collapsed',coachCollapsed);
+}
+
+// 把手點擊
+document.getElementById('coachHandle').addEventListener('click',toggleCoachCollapse);
+
+// 滑動手勢：往下收合，往上展開
+document.getElementById('coachBubble').addEventListener('touchstart',function(e){
+  coachTouchStartY=e.touches[0].clientY;
+},{passive:true});
+document.getElementById('coachBubble').addEventListener('touchend',function(e){
+  const dy=e.changedTouches[0].clientY-coachTouchStartY;
+  if(dy>40&&!coachCollapsed)toggleCoachCollapse();
+  else if(dy<-40&&coachCollapsed)toggleCoachCollapse();
+},{passive:true});
 
 // ─── LEVEL SELECT ───
 function goLevel(diff){
